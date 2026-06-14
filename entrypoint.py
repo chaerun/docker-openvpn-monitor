@@ -6,13 +6,11 @@ import configparser
 def format_key(key):
     # Map Rui Marinho's flat variables to the correct underscored config keys
     mapping = {
+        'MAPS': 'enable_maps',
         'DATETIMEFORMAT': 'datetime_format',
         'MAPSHEIGHT': 'maps_height',
         'SHOWDISCONNECT': 'show_disconnect',
-        'GEOIPDATA': 'geoip_data',
-        'GEOIP_DATA': 'geoip_data',
-        'LATITUDE': 'latitude',
-        'LONGITUDE': 'longitude'
+        'GEOIPDATA': 'geoip_data'
     }
     return mapping.get(key, key.lower())
 

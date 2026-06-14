@@ -26,7 +26,9 @@ OpenVPN Monitor is a web-based utility that displays the status of OpenVPN serve
 
 Make sure OpenVPN is configured to open the management interface so the Monitor can connect to it. Edit your `server.conf` file and add the following directive (using port `5555` or any port of your preference):
 
-    management 0.0.0.0 5555
+```ini
+management 0.0.0.0 5555
+```
 
 ---
 
@@ -34,9 +36,11 @@ Make sure OpenVPN is configured to open the management interface so the Monitor 
 
 You can run the latest version directly from Docker Hub. Because this image has sensible defaults baked in, you can launch a functional, out-of-the-box instance pointing to a local OpenVPN server with a single command:
 
-    docker run -d -p 80:80 --name openvpn-monitor \
-      -e OPENVPNMONITOR_SITES_0_HOST=192.168.1.100 \
-      chaerun/openvpn-monitor
+```bash
+docker run -d -p 80:80 --name openvpn-monitor \
+  -e OPENVPNMONITOR_SITES_0_HOST=192.168.1.100 \
+  chaerun/openvpn-monitor
+```
 
 _(Replace `192.168.1.100` with the actual IP address of your OpenVPN server)._
 
@@ -49,39 +53,55 @@ Variables are organized into two groups:
 - `OPENVPNMONITOR_DEFAULT_<PROPERTY>`: populates the global `[openvpn-monitor]` section.
 - `OPENVPNMONITOR_SITES_<INDEX>_<PROPERTY>`: populates each site section.
 
-_Note: If a property contains underscores (like `datetime_format` or `show_disconnect`), you must pass those properties without the underscore (e.g., `DATETIMEFORMAT`)._
-
 **Example: Running with Custom Locations and Multiple Sites**
 
-    docker run -d --name openvpn-monitor \
-      -e OPENVPNMONITOR_DEFAULT_DATETIMEFORMAT="%%Y-%%m-%%d %%H:%%M:%%S" \
-      -e OPENVPNMONITOR_DEFAULT_LATITUDE=-37.8136 \
-      -e OPENVPNMONITOR_DEFAULT_LONGITUDE=144.9631 \
-      -e OPENVPNMONITOR_DEFAULT_MAPS=True \
-      -e OPENVPNMONITOR_DEFAULT_MAPSHEIGHT=500 \
-      -e OPENVPNMONITOR_DEFAULT_SITE="Global Network" \
-      -e OPENVPNMONITOR_SITES_0_ALIAS=UDP \
-      -e OPENVPNMONITOR_SITES_0_HOST=192.168.1.50 \
-      -e OPENVPNMONITOR_SITES_0_NAME=UDP \
-      -e OPENVPNMONITOR_SITES_0_PORT=5555 \
-      -e OPENVPNMONITOR_SITES_0_SHOWDISCONNECT=True \
-      -e OPENVPNMONITOR_SITES_1_ALIAS=TCP \
-      -e OPENVPNMONITOR_SITES_1_HOST=10.0.0.5 \
-      -e OPENVPNMONITOR_SITES_1_NAME=TCP \
-      -e OPENVPNMONITOR_SITES_1_PORT=5555 \
-      -p 80:80 \
-      chaerun/openvpn-monitor
+```bash
+docker run -d --name openvpn-monitor \
+  -e OPENVPNMONITOR_DEFAULT_SITE="Global Network" \
+  -e OPENVPNMONITOR_DEFAULT_LATITUDE=-37.8136 \
+  -e OPENVPNMONITOR_DEFAULT_LONGITUDE=144.9631 \
+  -e OPENVPNMONITOR_DEFAULT_ENABLE_MAPS=True \
+  -e OPENVPNMONITOR_DEFAULT_MAPS_HEIGHT=500 \
+  -e OPENVPNMONITOR_DEFAULT_DATETIME_FORMAT="%%Y-%%m-%%d %%H:%%M:%%S" \
+  -e OPENVPNMONITOR_SITES_0_ALIAS=UDP \
+  -e OPENVPNMONITOR_SITES_0_HOST=192.168.1.50 \
+  -e OPENVPNMONITOR_SITES_0_NAME=UDP \
+  -e OPENVPNMONITOR_SITES_0_PORT=5555 \
+  -e OPENVPNMONITOR_SITES_0_SHOW_DISCONNECT=True \
+  -e OPENVPNMONITOR_SITES_1_ALIAS=TCP \
+  -e OPENVPNMONITOR_SITES_1_HOST=10.0.0.5 \
+  -e OPENVPNMONITOR_SITES_1_NAME=TCP \
+  -e OPENVPNMONITOR_SITES_1_PORT=5555 \
+  -p 80:80 \
+  chaerun/openvpn-monitor
+```
 
 The OpenVPN Monitor will now be accessible via http://localhost:80.
 
 #### Overriding the Built-in Logo
 
-This image includes a default `logo.png` located at `/etc/openvpn-monitor/logo.png`. If you want to use your own custom logo, you must mount it into the container and update the environment variable with the absolute path:
+The application automatically looks for local logo files inside the `/etc/openvpn-monitor` directory, but it also natively supports direct web URLs. You have two options for setting your own custom logo:
 
-    docker run -d -p 80:80 \
-      -v /path/to/your/custom-logo.png:/etc/openvpn-monitor/custom-logo.png \
-      -e OPENVPNMONITOR_DEFAULT_LOGO=/etc/openvpn-monitor/custom-logo.png \
-      chaerun/openvpn-monitor
+- Mount a Local File
+
+  Mount your custom image directly into the container's `/etc/openvpn-monitor` directory, and set the environment variable to just the filename. (Note: Ensure your host file has read permissions, e.g., `chmod 644`).
+
+  ```bash
+  docker run -d -p 80:80 \
+    -v /path/to/your/custom-logo.png:/etc/openvpn-monitor/custom-logo.png \
+    -e OPENVPNMONITOR_DEFAULT_LOGO=custom-logo.png \
+    chaerun/openvpn-monitor
+  ```
+
+- Use a Web URL
+
+  You can bypass local file mounts entirely by providing a direct HTTP or HTTPS link to an image.
+
+  ```bash
+  docker run -d -p 80:80 \
+    -e OPENVPNMONITOR_DEFAULT_LOGO="https://example.com/my-logo.png" \
+    chaerun/openvpn-monitor
+  ```
 
 ---
 
@@ -93,22 +113,26 @@ If you prefer to build the image from source, you can clone the repository and u
 
 Clone this repository and run the `docker build` command.
 
-    git clone https://github.com/chaerun/docker-openvpn-monitor.git
-    cd docker-openvpn-monitor
+```bash
+git clone https://github.com/chaerun/docker-openvpn-monitor.git
+cd docker-openvpn-monitor
 
-    # Build the image and tag it locally
-    docker build -t my-openvpn-monitor .
+# Build the image and tag it locally
+docker build -t my-openvpn-monitor .
+```
 
 ### 2. Run your Custom Build
 
 Once the build is complete, you can run it referencing your local tag:
 
-    docker run -d --name my-vpn-monitor \
-      -p 8080:80 \
-      -e OPENVPNMONITOR_DEFAULT_SITE="My Local Build" \
-      -e OPENVPNMONITOR_SITES_0_NAME="Local VPN" \
-      -e OPENVPNMONITOR_SITES_0_HOST=192.168.1.100 \
-      my-openvpn-monitor
+```bash
+docker run -d --name my-vpn-monitor \
+  -p 8080:80 \
+  -e OPENVPNMONITOR_DEFAULT_SITE="My Local Build" \
+  -e OPENVPNMONITOR_SITES_0_NAME="Local VPN" \
+  -e OPENVPNMONITOR_SITES_0_HOST=192.168.1.100 \
+  my-openvpn-monitor
+```
 
 Navigate to http://localhost:8080 to view your locally built monitor.
 
