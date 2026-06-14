@@ -16,21 +16,28 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new_version: ${{ steps.check.outputs.new_version }}
+      upstream_tag: ${{ steps.check.outputs.upstream_tag }}
       version: ${{ steps.check.outputs.version }}
     steps:
       - id: check
         run: |
-          UPSTREAM_VERSION=$(curl -s https://api.github.com/repos/furlongm/openvpn-monitor/releases/latest | jq -r .tag_name)
-          LOCAL_VERSION=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name || echo "none")
+          # Fetch the latest tag from upstream and local
+          UPSTREAM_TAG=$(curl -s https://api.github.com/repos/furlongm/openvpn-monitor/tags | jq -r '.[0].name')
+          LOCAL_TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name || echo "none")
+
+          # Sanitize versions by stripping the leading 'v' (if it exists)
+          UPSTREAM_VERSION=${UPSTREAM_TAG#v}
+          LOCAL_VERSION=${LOCAL_TAG#v}
 
           # Check if upstream has a new valid version that we haven't released yet
-          if [ "$UPSTREAM_VERSION" != "null" ] && [ "$UPSTREAM_VERSION" != "$LOCAL_VERSION" ]; then
+          if [ "$UPSTREAM_VERSION" != "null" ] && [ -n "$UPSTREAM_VERSION" ] && [ "$UPSTREAM_VERSION" != "$LOCAL_VERSION" ]; then
             echo "new_version=true" >> $GITHUB_OUTPUT
           else
             echo "new_version=false" >> $GITHUB_OUTPUT
           fi
 
-          # Always output the upstream version to be used by manual triggers
+          # Always output the sanitized upstream version to be used by manual triggers
+          echo "upstream_tag=$UPSTREAM_TAG" >> $GITHUB_OUTPUT
           echo "version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
 
   create-release:
@@ -40,6 +47,7 @@ jobs:
     permissions:
       contents: write
     outputs:
+      upstream_tag: ${{ steps.version.outputs.upstream_tag }}
       version: ${{ steps.version.outputs.version }}
 
     steps:
@@ -49,7 +57,9 @@ jobs:
       - name: Set Version
         id: version
         run: |
-          # If triggered by a manual tag push (e.g., 'git push origin v2.0.5')
+          echo "upstream_tag=${{ needs.check-upstream.outputs.upstream_tag }}" >> $GITHUB_OUTPUT
+
+          # If triggered by a manual tag push (e.g., 'git push origin 2.0.5')
           if [ "${{ github.ref_type }}" == "tag" ]; then
             echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
           # Otherwise (schedule or manual UI click), use the upstream version
@@ -91,7 +101,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
-          build-args: VERSION=${{ needs.create-release.outputs.version }}
+          build-args: UPSTREAM_TAG=${{ needs.create-release.outputs.upstream_tag }}
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/openvpn-monitor:${{ needs.create-release.outputs.version }}
             ${{ secrets.DOCKERHUB_USERNAME }}/openvpn-monitor:latest

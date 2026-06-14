@@ -3,13 +3,13 @@
 # ----------------------------------------------------
 FROM node:18-slim AS builder
 
-ARG VERSION=2.0.3
+ARG UPSTREAM_TAG=2.0.4
 
 RUN apt-get update && apt-get install -y wget tar && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /src
 
-RUN wget -qO- https://github.com/furlongm/openvpn-monitor/archive/refs/tags/${VERSION}.tar.gz | tar -xz --strip-components=1
+RUN wget -qO- https://github.com/furlongm/openvpn-monitor/archive/refs/tags/${UPSTREAM_TAG}.tar.gz | tar -xz --strip-components=1
 
 RUN yarnpkg --prod --modules-folder openvpn_monitor/static/dist install
 
