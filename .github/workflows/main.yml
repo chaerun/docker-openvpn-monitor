@@ -1,0 +1,97 @@
+name: Release & Deploy
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.check.outputs.new_version }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - id: check
+        run: |
+          UPSTREAM_VERSION=$(curl -s https://api.github.com/repos/furlongm/openvpn-monitor/releases/latest | jq -r .tag_name)
+          LOCAL_VERSION=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name || echo "none")
+
+          # Check if upstream has a new valid version that we haven't released yet
+          if [ "$UPSTREAM_VERSION" != "null" ] && [ "$UPSTREAM_VERSION" != "$LOCAL_VERSION" ]; then
+            echo "new_version=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_version=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Always output the upstream version to be used by manual triggers
+          echo "version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
+
+  create-release:
+    needs: check-upstream
+    if: needs.check-upstream.outputs.new_version == 'true' || github.event_name == 'workflow_dispatch' || github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set Version
+        id: version
+        run: |
+          # If triggered by a manual tag push (e.g., 'git push origin v2.0.5')
+          if [ "${{ github.ref_type }}" == "tag" ]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          # Otherwise (schedule or manual UI click), use the upstream version
+          else
+            echo "version=${{ needs.check-upstream.outputs.version }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: ${{ steps.version.outputs.version }}
+          body: "Automated Docker image deployment for upstream version **${{ steps.version.outputs.version }}**."
+          make_latest: true
+
+  build-docker:
+    needs: create-release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Docker Setup QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Docker Setup Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Docker Login
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          build-args: VERSION=${{ needs.create-release.outputs.version }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/openvpn-monitor:${{ needs.create-release.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/openvpn-monitor:latest
