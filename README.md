@@ -4,7 +4,7 @@
 [![Docker Pulls][docker-pulls-image]][docker-hub-url]
 [![Docker Stars][docker-stars-image]][docker-hub-url]
 
-Web-based OpenVPN Monitor Docker image. Based on [furlongm/openvpn-monitor](https://github.com/furlongm/openvpn-monitor) and [ruimarinho/docker-openvpn-monitor](https://github.com/ruimarinho/docker-openvpn-monitor) Docker image.
+A lightweight, multi-platform web-based OpenVPN Monitor Docker image. Based on [furlongm/openvpn-monitor](https://github.com/furlongm/openvpn-monitor) and [ruimarinho/docker-openvpn-monitor](https://github.com/ruimarinho/docker-openvpn-monitor) Docker image.
 
 - `amd64` (`x86_64`)
 - `arm64` (`aarch64`, `armv8`)
