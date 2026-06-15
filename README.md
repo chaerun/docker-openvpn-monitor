@@ -16,9 +16,10 @@ OpenVPN Monitor is a web-based utility that displays the status of OpenVPN serve
 
 ### Key Features of this Image
 
-- **Zero-Config Defaults:** Boots immediately with a built-in Open Source Initiative logo and a default map location centered on Kedonganan, Bali, Indonesia.
-- **Auto-Updating GeoIP:** Automatically fetches the latest free DB-IP Lite City database during the Docker build process.
-- **Environment Variable Driven:** Dynamically generates the required `.conf` files at runtime via a custom Python entrypoint, meaning no manual volume mapping is required for basic configurations.
+- **Lightweight Micro-Image**: Built using a highly optimized, multi-stage Alpine Linux environment, resulting in a tiny, production-ready footprint (~80MB) that is completely free of unnecessary C-compilers or bloated source files.
+- **Zero-Config Defaults**: Boots immediately with a built-in Open Source Initiative logo and a default map location centered on Kedonganan, Bali, Indonesia.
+- **Always Fresh & Secure**: Automatically rebuilt every week via GitHub Actions to ensure the built-in free DB-IP Lite City database is always accurate, and the underlying OS has the absolute latest zero-day CVE security patches.
+- **Environment Variable Driven**: Dynamically generates the required .conf files at runtime via a custom Python entrypoint, meaning no manual volume mapping is required for basic configurations.
 
 ---
 

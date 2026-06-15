@@ -1,0 +1,54 @@
+name: Weekly Routine Rebuild
+
+on:
+  schedule:
+    # Runs at 00:00 (midnight) every Sunday
+    - cron: "0 0 * * 0"
+  # Allows you to trigger this specific rebuild manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  weekly-rebuild:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Get Latest Upstream Version
+        id: upstream
+        run: |
+          # Fetch the latest tag from upstream so we know what version to build
+          UPSTREAM_TAG=$(curl -s https://api.github.com/repos/furlongm/openvpn-monitor/tags | jq -r '.[0].name')
+          UPSTREAM_VERSION=${UPSTREAM_TAG#v}
+          echo "upstream_tag=$UPSTREAM_TAG" >> $GITHUB_OUTPUT
+          echo "version=$UPSTREAM_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Docker Setup QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Docker Setup Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Docker Login
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          # CRITICAL: 'pull: true' forces Docker to fetch the absolute latest python:alpine
+          # base image from Docker Hub to ensure you get all new OS security patches.
+          pull: true
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          build-args: UPSTREAM_TAG=${{ steps.upstream.outputs.upstream_tag }}
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/openvpn-monitor:${{ steps.upstream.outputs.version }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/openvpn-monitor:latest
