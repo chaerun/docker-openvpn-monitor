@@ -37,6 +37,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     OPENVPNMONITOR_DEFAULT_SITE="Global Network" \
     OPENVPNMONITOR_DEFAULT_LOGO=logo.png \
+    OPENVPNMONITOR_DEFAULT_FAVICON=favicon.ico \
     OPENVPNMONITOR_DEFAULT_LATITUDE=-8.7698 \
     OPENVPNMONITOR_DEFAULT_LONGITUDE=115.1691 \
     OPENVPNMONITOR_DEFAULT_ENABLE_MAPS=True \
@@ -63,6 +64,7 @@ COPY --from=builder /var/lib/GeoIP/dbip-city-lite.mmdb /var/lib/GeoIP/dbip-city-
 # 4. Create config directory and copy the logo
 RUN mkdir -p /etc/openvpn-monitor
 COPY assets/logo.png /etc/openvpn-monitor/logo.png
+COPY assets/favicon.ico /etc/openvpn-monitor/favicon.ico
 
 # 5. Copy entrypoint
 COPY entrypoint.py /usr/local/bin/entrypoint.py
