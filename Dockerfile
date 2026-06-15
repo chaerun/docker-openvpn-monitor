@@ -13,6 +13,10 @@ WORKDIR /src
 # Download and extract the OpenVPN Monitor source code
 RUN wget -qO- https://github.com/furlongm/openvpn-monitor/archive/refs/tags/${UPSTREAM_TAG}.tar.gz | tar -xz --strip-components=1
 
+# Forcefully update the version in VERSION.txt to match the downloaded tag
+RUN STRIPPED_VERSION=${UPSTREAM_TAG#v} && \
+    find . -name "VERSION.txt" -exec sh -c "echo '${STRIPPED_VERSION}' > {}" \;
+
 # Build JS assets and compile Python dependencies into binary Wheels
 RUN yarnpkg --prod --modules-folder openvpn_monitor/static/dist install
 RUN pip wheel --no-cache-dir --wheel-dir /wheels . gunicorn
