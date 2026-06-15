@@ -79,9 +79,9 @@ docker run -d --name openvpn-monitor \
 
 The OpenVPN Monitor will now be accessible via http://localhost:80.
 
-#### Overriding the Built-in Logo
+#### Overriding the Built-in Logo or Favicon
 
-The application automatically looks for local logo files inside the `/etc/openvpn-monitor` directory, but it also natively supports direct web URLs. You have two options for setting your own custom logo:
+The application automatically looks for local logo/favicon files inside the `/etc/openvpn-monitor` directory, but it also natively supports direct web URLs. You have two options for setting your own custom logo/favicon:
 
 - Mount a Local File
 
@@ -90,7 +90,9 @@ The application automatically looks for local logo files inside the `/etc/openvp
   ```bash
   docker run -d -p 80:80 \
     -v /path/to/your/custom-logo.png:/etc/openvpn-monitor/custom-logo.png \
+    -v /path/to/your/custom-favicon.ico:/etc/openvpn-monitor/custom-favicon.ico \
     -e OPENVPNMONITOR_DEFAULT_LOGO=custom-logo.png \
+    -e OPENVPNMONITOR_DEFAULT_FAVICON=custom-favicon.ico \
     chaerun/openvpn-monitor
   ```
 
@@ -101,6 +103,7 @@ The application automatically looks for local logo files inside the `/etc/openvp
   ```bash
   docker run -d -p 80:80 \
     -e OPENVPNMONITOR_DEFAULT_LOGO="https://example.com/my-logo.png" \
+    -e OPENVPNMONITOR_DEFAULT_FAVICON="https://example.com/my-favicon.ico" \
     chaerun/openvpn-monitor
   ```
 

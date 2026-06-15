@@ -3,7 +3,7 @@
 # ----------------------------------------------------
 FROM python:alpine AS builder
 
-ARG UPSTREAM_TAG=v2.0.5
+ARG UPSTREAM_TAG=2.0.6
 
 # Install build dependencies
 RUN apk add --no-cache wget tar gzip yarn gcc musl-dev libffi-dev python3-dev
@@ -11,7 +11,7 @@ RUN apk add --no-cache wget tar gzip yarn gcc musl-dev libffi-dev python3-dev
 WORKDIR /src
 
 # Download and extract the OpenVPN Monitor source code
-RUN wget -qO- https://github.com/furlongm/openvpn-monitor/archive/refs/tags/${UPSTREAM_TAG}.tar.gz | tar -xz --strip-components=1
+RUN wget -qO- https://github.com/chaerun/openvpn-monitor/archive/main.tar.gz | tar -xz --strip-components=1
 
 # Forcefully update the version in VERSION.txt to match the downloaded tag
 RUN STRIPPED_VERSION=${UPSTREAM_TAG#v} && \
